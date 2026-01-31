@@ -28,9 +28,7 @@ jobs:
       - name: Install dependencies
         run: npm ci
       - name: Build
-        # This allows the site to run under a subpath (e.g. user.github.io/repo-name)
-        # If using a custom domain, you can remove the --base flag
-        run: npm run build -- --base=/${{ github.event.repository.name }}/
+        run: npm run build
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
