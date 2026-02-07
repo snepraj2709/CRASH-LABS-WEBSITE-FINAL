@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { X, Send, Building2, Mail, MessageSquare, CheckCircle, AlertCircle } from 'lucide-react';
+import { useGoogleForm } from '../hooks/useGoogleForm';
 
 interface PartnershipModalProps {
   isOpen: boolean;
@@ -13,8 +14,9 @@ const PartnershipModal: React.FC<PartnershipModalProps> = ({ isOpen, onClose }) 
     idea: ''
   });
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isSubmitted, setIsSubmitted] = useState(false);
+
+  // Use Google Sheets integration with specific sheet name
+  const { submit, loading, error, success } = useGoogleForm({ sheetName: 'Industry Partnership Responses' });
 
   // Common personal email domains to block
   const personalDomains = [
@@ -59,29 +61,21 @@ const PartnershipModal: React.FC<PartnershipModalProps> = ({ isOpen, onClose }) 
 
     if (!validateForm()) return;
 
-    setIsSubmitting(true);
+    // Extract organization from email domain
+    const organization = formData.email.split('@')[1];
 
-    // Create mailto link with form data
-    const subject = `Partnership Inquiry from ${formData.name} - ${formData.email.split('@')[1]}`;
-    const body = `Name: ${formData.name}
-Work Email: ${formData.email}
-Organization: ${formData.email.split('@')[1]}
+    // Submit to Google Sheets
+    const result = await submit({
+      ...formData,
+      organization
+    });
 
-Collaboration Idea:
-${formData.idea}
-
----
-Sent from CRASH Lab Website Partnership Form`;
-
-    const mailtoLink = `mailto:suvrankar.datta@ashoka.edu.in?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-
-    // Small delay for UX
-    setTimeout(() => {
-      window.location.href = mailtoLink;
-      setIsSubmitting(false);
-      setIsSubmitted(true);
-      setFormData({ name: '', email: '', idea: '' });
-    }, 500);
+    // Reset form on success (success state is managed by useGoogleForm)
+    if (result.success) {
+      setTimeout(() => {
+        setFormData({ name: '', email: '', idea: '' });
+      }, 2000);
+    }
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -96,7 +90,6 @@ Sent from CRASH Lab Website Partnership Form`;
   const handleClose = () => {
     setFormData({ name: '', email: '', idea: '' });
     setErrors({});
-    setIsSubmitted(false);
     onClose();
   };
 
@@ -120,7 +113,7 @@ Sent from CRASH Lab Website Partnership Form`;
           <X size={20} />
         </button>
 
-        {isSubmitted ? (
+        {success ? (
           /* Success State */
           <div className="p-8 md:p-12 text-center">
             <div className="w-16 h-16 bg-brand-blue/10 rounded-full flex items-center justify-center mx-auto mb-6">
@@ -237,16 +230,24 @@ Sent from CRASH Lab Website Partnership Form`;
                 )}
               </div>
 
+              {/* Error Display */}
+              {error && (
+                <div className="p-4 bg-red-50 border border-red-100 rounded-lg flex items-center gap-3 text-red-600">
+                  <AlertCircle size={20} />
+                  <p className="text-sm font-medium">{error}</p>
+                </div>
+              )}
+
               {/* Submit Button */}
               <button
                 type="submit"
-                disabled={isSubmitting}
+                disabled={loading}
                 className="w-full flex items-center justify-center gap-3 px-8 py-4 bg-navy-900 text-white font-semibold rounded-full hover:bg-brand-blue transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {isSubmitting ? (
+                {loading ? (
                   <>
                     <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                    Sending...
+                    Submitting...
                   </>
                 ) : (
                   <>
