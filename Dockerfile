@@ -1,12 +1,28 @@
+# ---------- Build Stage ----------
+FROM node:18-alpine AS builder
+
+WORKDIR /app
+
+# Install dependencies
+COPY package*.json ./
+RUN npm install
+
+# Copy project files
+COPY . .
+
+# Build the Vite app
+RUN npm run build
+
+
+# ---------- Production Stage ----------
 FROM nginx:alpine
 
-# Copy website files into nginx directory
-COPY . /usr/share/nginx/html
+# Copy built site to nginx
+COPY --from=builder /app/dist /usr/share/nginx/html
 
-# Expose Cloud Run port
-EXPOSE 8080
-
-# Replace default nginx config
+# Cloud Run requires port 8080
 RUN sed -i 's/listen       80;/listen       8080;/' /etc/nginx/conf.d/default.conf
+
+EXPOSE 8080
 
 CMD ["nginx", "-g", "daemon off;"]
