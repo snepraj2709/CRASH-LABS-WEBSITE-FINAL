@@ -17,7 +17,7 @@ export const useGoogleForm = ({ scriptUrl, sheetName = 'Sheet1' }: GoogleFormCon
     const [success, setSuccess] = useState(false);
 
     // Use environment variable if URL not provided
-    const targetUrl = scriptUrl || import.meta.env.VITE_GOOGLE_SCRIPT_URL;
+    const targetUrl = scriptUrl || window.RUNTIME_CONFIG.VITE_GOOGLE_SCRIPT_URL;
 
     const submit = async (data: Record<string, any>): Promise<SubmitResult> => {
         setLoading(true);
@@ -33,7 +33,7 @@ export const useGoogleForm = ({ scriptUrl, sheetName = 'Sheet1' }: GoogleFormCon
             const payload = {
                 ...data,
                 sheetName,
-                secret: import.meta.env.VITE_APP_SECRET,
+                secret: window.RUNTIME_CONFIG.VITE_APP_SECRET,
             };
 
             // We use fetch with 'no-cors' initially? No, Apps Script Web Apps support CORS if returning JSON.
